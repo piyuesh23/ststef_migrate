@@ -1,0 +1,13 @@
+name = "Ststef Migration"
+description = "Migrate Ststef blog content form Legacy system to the Drupal Website."
+package = "Migration"
+core = 7.x
+dependencies[] = migrate
+dependencies[] = migrate_ui
+
+files[] = ststef_migrate.migrate.inc
+files[] = includes/ststefPostsMigration.inc
+files[] = includes/ststefCommentsMigration.inc
+files[] = includes/ststefUsersMigration.inc
+files[] = includes/ststefTagsMigration.inc
+files[] = includes/ststefCategoriesMigration.inc
