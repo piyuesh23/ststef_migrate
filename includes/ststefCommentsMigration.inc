@@ -18,9 +18,9 @@ class ststefCommentsMigration extends Migration {
       ),
       MigrateDestinationComment::getKeySchema()
     );
-    $query = db_select('st_legacy.wp_comments', 'c')
+    $query = db_select('st_legacy1.wp_comments', 'c')
       ->fields('c', array('comment_ID', 'comment_post_ID', 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_author_IP', 'comment_date', 'comment_date_gmt', 'comment_content', 'comment_karma', 'comment_approved', 'comment_agent', 'comment_type', 'comment_parent', 'user_id'));
-    $query->join('st_legacy.wp_posts','st_wp','st_wp.ID = c.comment_post_ID');
+    $query->join('st_legacy1.wp_posts','st_wp','st_wp.ID = c.comment_post_ID');
     $query->condition('st_wp.post_type', 'post');
     $query->condition('c.comment_approved', '1');
     $query->orderBy('comment_post_ID');

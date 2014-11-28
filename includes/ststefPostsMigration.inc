@@ -11,7 +11,7 @@ class ststefPostsMigration extends Migration {
     $this->description = t('Migrate ststef Blog Posts');
 
     // Query the legacy db to get the user data
-    $query = db_select('st_legacy.wp_posts','s')
+    $query = db_select('st_legacy1.wp_posts','s')
       ->fields('s', array('ID', 'post_author', 'post_date', 'post_date_gmt', 'post_content', 'post_title', 'post_excerpt', 'post_status', 'comment_status', 'ping_status', 'post_password', 'post_name', 'to_ping', 'pinged', 'post_modified', 'post_modified_gmt', 'post_content_filtered', 'post_parent', 'guid', 'menu_order', 'post_type', 'post_mime_type', 'comment_count'))
       ->condition('post_type', 'post')
       ->orderBy('post_date');
@@ -66,6 +66,9 @@ class ststefPostsMigration extends Migration {
     $this->addFieldMapping('field_blog_image', 'image_id');
     $this->addFieldMapping('field_blog_image:file_class')
       ->defaultValue('MigrateFileFid');
+    $this->addFieldMapping('metatag_title', 'meta_title');
+    $this->addFieldMapping('metatag_description', 'metatag_description');
+    $this->addFieldMapping('metatag_keywords', 'metatag_keywords');
   }
 
   public function prepareRow($currentRow) {
@@ -75,10 +78,10 @@ class ststefPostsMigration extends Migration {
     $currentRow->post_content = str_replace('http://blog.st-stefanus.com/', '/', $currentRow->post_content);
 
     // Fetching tags the current blog is tagged with.
-    $post_tags_query = db_select('st_legacy.wp_term_relationships','st_wtr');
+    $post_tags_query = db_select('st_legacy1.wp_term_relationships','st_wtr');
     $post_tags_query->fields('st_wtr', array('term_taxonomy_id'));
     $post_tags_query->condition('object_id', $currentRow->ID);
-    $post_tags_query->join('st_legacy.wp_term_taxonomy', 'st_wtt', 'st_wtr.term_taxonomy_id = st_wtt.term_taxonomy_id');
+    $post_tags_query->join('st_legacy1.wp_term_taxonomy', 'st_wtt', 'st_wtr.term_taxonomy_id = st_wtt.term_taxonomy_id');
     $post_tags_query->condition('st_wtt.taxonomy', 'post_tag');
     $post_tags = $post_tags_query->execute()->fetchAllKeyed();
     $post_tags_string = '';
@@ -90,10 +93,10 @@ class ststefPostsMigration extends Migration {
     $currentRow->to_ping = rtrim($post_tags_string, '|');
 
     // Fetching categories the current blog is tagged with.
-    $post_categories_query = db_select('st_legacy.wp_term_relationships','st_wtr');
+    $post_categories_query = db_select('st_legacy1.wp_term_relationships','st_wtr');
     $post_categories_query->fields('st_wtr', array('term_taxonomy_id'));
     $post_categories_query->condition('object_id', $currentRow->ID);
-    $post_categories_query->join('st_legacy.wp_term_taxonomy', 'st_wtt', 'st_wtr.term_taxonomy_id = st_wtt.term_taxonomy_id');
+    $post_categories_query->join('st_legacy1.wp_term_taxonomy', 'st_wtt', 'st_wtr.term_taxonomy_id = st_wtt.term_taxonomy_id');
     $post_categories_query->condition('st_wtt.taxonomy', 'category');
     $post_categories = $post_categories_query->execute()->fetchAllKeyed();
 
@@ -106,7 +109,7 @@ class ststefPostsMigration extends Migration {
     $currentRow->post_password = rtrim($post_category_string, '|');
 
     // Fetch language & translation id for the current row
-    $translation_query = db_select('st_legacy.wp_icl_translations','st_wit');
+    $translation_query = db_select('st_legacy1.wp_icl_translations','st_wit');
     $translation_query->fields('st_wit', array('trid', 'language_code'));
     $translation_query->condition('element_id', $currentRow->ID);
     $translation_query->condition('element_type', 'post_post');
@@ -115,8 +118,37 @@ class ststefPostsMigration extends Migration {
     $currentRow->trid = $translations['trid'];
     $currentRow->language_code = $translations['language_code'];
 
+    // Fix for langcode inconsistency between wordpress & Drupal.
+    if ($currentRow->language_code == 'en') {
+      $currentRow->language_code = 'en-gb';
+    }
+    elseif ($currentRow->language_code == 'us') {
+      $currentRow->language_code = 'en';
+    }
+
+    // Fetch the SEO page-title for the post
+    $meta_content_query = db_select('st_legacy1.wp_postmeta', 'wp');
+    $meta_content_query->fields('wp', array('meta_value'));
+    $meta_content_query->condition('meta_key', '_yoast_wpseo_title');
+    $meta_content_query->condition('post_id', $currentRow->ID);
+    $currentRow->meta_title = $meta_content_query->execute()->fetchField();
+
+    // Fetch the SEO meta-description for the post
+    $meta_content_query = db_select('st_legacy1.wp_postmeta', 'wp');
+    $meta_content_query->fields('wp', array('meta_value'));
+    $meta_content_query->condition('meta_key', '_yoast_wpseo_metadesc');
+    $meta_content_query->condition('post_id', $currentRow->ID);
+    $currentRow->metatag_description = $meta_content_query->execute()->fetchField();
+
+    // Fetch the SEO meta-keywords for the post
+    $meta_content_query = db_select('st_legacy1.wp_postmeta', 'wp');
+    $meta_content_query->fields('wp', array('meta_value'));
+    $meta_content_query->condition('meta_key', '_yoast_wpseo_focuskw');
+    $meta_content_query->condition('post_id', $currentRow->ID);
+    $currentRow->metatag_keywords = $meta_content_query->execute()->fetchField();
+
     // Fetch images for the blog posts
-    $image_url_source_query = db_select('st_legacy.wp_posts', 'st_wp');
+    $image_url_source_query = db_select('st_legacy1.wp_posts', 'st_wp');
     $image_url_source_query->fields('st_wp', array('guid'));
     $image_url_source_query->condition('post_type', 'attachment');
     $image_url_source_query->condition('post_parent', $currentRow->ID);

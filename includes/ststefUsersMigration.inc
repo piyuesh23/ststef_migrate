@@ -11,7 +11,7 @@ class ststefUsersMigration extends Migration {
     $this->description = t('Migrate St. Stefanus Users');
 
     // Query the legacy db to get the user data
-    $query = db_select('st_legacy.wp_users','u')
+    $query = db_select('st_legacy1.wp_users','u')
       ->fields('u', array('ID', 'user_login', 'user_pass', 'user_nicename', 'user_email', 'user_url', 'user_registered', 'user_activation_key', 'user_status', 'display_name'))
       ->condition('ID', 1, '<>');
 

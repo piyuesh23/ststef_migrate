@@ -11,9 +11,9 @@ class ststefCategoriesMigration extends Migration {
     $this->description = t('Migrate ststef categories');
 
     // Query the legacy db to get the user data
-    $query = db_select('st_legacy.wp_terms', 't');
+    $query = db_select('st_legacy1.wp_terms', 't');
     $query->fields('t', array('name', 'term_id'));
-    $query->join('st_legacy.wp_term_taxonomy', 'tt', 'tt.term_id = t.term_id');
+    $query->join('st_legacy1.wp_term_taxonomy', 'tt', 'tt.term_id = t.term_id');
     $query->condition('tt.taxonomy', 'category');
 
     $this->map = new MigrateSQLMap($this->machineName,
