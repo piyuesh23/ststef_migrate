@@ -36,6 +36,7 @@ class ststefTagsMigration extends Migration {
     $this->destination = new MigrateDestinationTerm('tags');
 
     $this->addFieldMapping('name', 'name');
+    $this->addFieldMapping('language', 'language_code');
     $this->addFieldMapping('description')
       ->issueGroup(t('DNM'));
     $this->addFieldMapping('format')
@@ -47,6 +48,22 @@ class ststefTagsMigration extends Migration {
   }
 
   public function prepareRow($currentRow) {
+    // Fetch language & translation id for the current row
+    $translation_query = db_select('st_legacy1.wp_icl_translations','st_wit');
+    $translation_query->fields('st_wit', array('trid', 'language_code'));
+    $translation_query->condition('element_id', $currentRow->term_id);
+    $translation_query->condition('element_type', 'tax_post_tag');
+    $translations = $translation_query->execute()->fetchAssoc();
+
+    $currentRow->trid = $translations['trid'];
+    $currentRow->language_code = $translations['language_code'];
+    // Fix for langcode inconsistency between wordpress & Drupal.
+    if ($currentRow->language_code == 'en') {
+      $currentRow->language_code = 'en-gb';
+    }
+    elseif ($currentRow->language_code == 'us') {
+      $currentRow->language_code = 'en';
+    }
     return TRUE;
   }
 }

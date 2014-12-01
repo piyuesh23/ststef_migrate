@@ -59,7 +59,7 @@ class ststefPostsMigration extends Migration {
       ->separator('|')
       ->sourceMigration('ststefTags')
       ->arguments(array('source_type' => 'tid', 'create_term' => TRUE));
-    $this->addFieldMapping('field_blog_categories', 'post_password')
+    $this->addFieldMapping('field_blog_category', 'post_password')
       ->separator('|')
       ->sourceMigration('ststefCategories')
       ->arguments(array('source_type' => 'tid', 'create_term' => TRUE));

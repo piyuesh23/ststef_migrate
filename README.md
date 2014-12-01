@@ -6,7 +6,7 @@
   - Create a new vocabulary with machine name 'blog_category'.
   - Add a multivalued field field_blog_category(term reference field) to the blog_entry content type.
   - Add a single valued field field_blog_image to  blog content type.
-
+  - Create a folder 'blog_images' inside sites/default/files & make sure its writeable by user running the server.
 # Running Migrations using drush:
   - Before running any of the migrations, make sure we register the migration handlers in the UI. Could have been done via code as well, but since we need to run it from local, manual registration is fine.
     - goto admin/content/import/registration and click on Register statically-defined classes.
