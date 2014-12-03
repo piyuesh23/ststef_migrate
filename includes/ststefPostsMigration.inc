@@ -118,6 +118,15 @@ class ststefPostsMigration extends Migration {
     $currentRow->trid = $translations['trid'];
     $currentRow->language_code = $translations['language_code'];
 
+    // Exceptional handling for trid=86 since a translation set with this ID already exists in db.
+    if ($currentRow->trid == 86) {
+      $max_trid_query = db_select('st_legacy1.wp_icl_translations', 'st_wit');
+      $max_trid_query->addExpression('MAX(trid)', 'max_trid');
+      $max_trid = $max_trid_query->execute()->fetchField();
+
+      $currentRow->trid = $max_trid + 1;
+    }
+
     // Fix for langcode inconsistency between wordpress & Drupal.
     if ($currentRow->language_code == 'en') {
       $currentRow->language_code = 'en-gb';
@@ -147,12 +156,19 @@ class ststefPostsMigration extends Migration {
     $meta_content_query->condition('post_id', $currentRow->ID);
     $currentRow->metatag_keywords = $meta_content_query->execute()->fetchField();
 
-    // Fetch images for the blog posts
-    $image_url_source_query = db_select('st_legacy1.wp_posts', 'st_wp');
-    $image_url_source_query->fields('st_wp', array('guid'));
-    $image_url_source_query->condition('post_type', 'attachment');
-    $image_url_source_query->condition('post_parent', $currentRow->ID);
-    $image_url_source_query->range(0,1);
+    // Fetch featured image's fid
+    $image_thumbnai_meta_query = db_select('st_legacy1.wp_postmeta', 'wpm');
+    $image_thumbnai_meta_query->fields('wpm', array('meta_value'));
+    $image_thumbnai_meta_query->condition('wpm.meta_key', '_thumbnail_id');
+    $image_thumbnai_meta_query->condition('wpm.post_id', $currentRow->ID);
+    $image_thumbnai_meta_id = $image_thumbnai_meta_query->execute()->fetchField();
+
+    // Fetch image's guid for the blog post
+    $image_url_source_query = db_select('st_legacy1.wp_posts', 'wpp');
+    $image_url_source_query->fields('wpp', array('guid'));
+    $image_url_source_query->condition('wpp.post_type', 'attachment');
+    $image_url_source_query->condition('wpp.ID', $image_thumbnai_meta_id);
+
     $image_url_source = $image_url_source_query->execute()->fetchField();
 
     if ($image_url_source) {
@@ -186,5 +202,9 @@ class ststefPostsMigration extends Migration {
     }
 
     return $local;
+  }
+
+  public function complete($entity, stdClass $row) {
+
   }
 }

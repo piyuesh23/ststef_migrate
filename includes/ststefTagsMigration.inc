@@ -13,17 +13,18 @@ class ststefTagsMigration extends Migration {
     // Query the legacy db to get the user data
     $query = db_select('st_legacy1.wp_terms', 't');
     $query->fields('t', array('name', 'term_id'));
+    $query->fields('tt', array('term_taxonomy_id'));
     $query->join('st_legacy1.wp_term_taxonomy', 'tt', 'tt.term_id = t.term_id');
     $query->condition('tt.taxonomy', 'post_tag');
 
     $this->map = new MigrateSQLMap($this->machineName,
       array(
-        'term_id' => array(
+        'term_taxonomy_id' => array(
           'type' => 'int',
           'length' => 20,
           'not null' => TRUE,
           'description' => 'Term Id from legacy table',
-          'alias' => 't',
+          'alias' => 'tt',
         )
       ),
       MigrateDestinationTerm::getKeySchema()
@@ -51,9 +52,12 @@ class ststefTagsMigration extends Migration {
     // Fetch language & translation id for the current row
     $translation_query = db_select('st_legacy1.wp_icl_translations','st_wit');
     $translation_query->fields('st_wit', array('trid', 'language_code'));
-    $translation_query->condition('element_id', $currentRow->term_id);
+    $translation_query->condition('element_id', $currentRow->term_taxonomy_id);
     $translation_query->condition('element_type', 'tax_post_tag');
     $translations = $translation_query->execute()->fetchAssoc();
+
+    // Decode html entities in term name.
+    $currentRow->name = htmlspecialchars_decode($currentRow->name);
 
     $currentRow->trid = $translations['trid'];
     $currentRow->language_code = $translations['language_code'];
