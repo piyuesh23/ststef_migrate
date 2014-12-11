@@ -75,7 +75,15 @@ class ststefPostsMigration extends Migration {
     $currentRow->post_date = strtotime($currentRow->post_date) > 0 ? strtotime($currentRow->post_date) : 0;
     $currentRow->post_modified = strtotime($currentRow->post_modified) > 0 ? strtotime($currentRow->post_modified) : 0;
     $currentRow->post_status = $currentRow->post_status == "publish" ? 1 : 0;
+
+    // Processing the absolute urls & caption tags
+    $currentRow->post_content = str_replace('http://blog.st-stefanus.com/wp-content/', '/sites/g/files/ogq301/files/wp-content/', $currentRow->post_content);
     $currentRow->post_content = str_replace('http://blog.st-stefanus.com/', '/', $currentRow->post_content);
+    $currentRow->post_content = str_replace('http://www.st-stefanus.com/', '/', $currentRow->post_content);
+    $currentRow->post_content = preg_replace('/(\[caption[^\]]*\])/', '', $currentRow->post_content);
+    // preg_match_all('/<\/a>([(a-z|A-Z|\s|\d)]+)\[\/caption\]/', $currentRow->post_content, $matches);
+    // $currentRow->post_content = str_replace($matches[1], '', $currentRow->post_content);
+    $currentRow->post_content = preg_replace('/(\[\/caption\])/', '', $currentRow->post_content);
 
     // Fetching tags the current blog is tagged with.
     $post_tags_query = db_select('st_legacy1.wp_term_relationships','st_wtr');
